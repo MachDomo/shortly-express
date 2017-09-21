@@ -84,7 +84,7 @@ describe('', function() {
         'username': 'Phillip',
         'password': 'Phillip'
       }).save()
-        .then(function() {
+        .then(function(model) {
           console.log('User created');
           console.log(model.get('username'));
           var options = {

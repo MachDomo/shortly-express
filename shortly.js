@@ -61,20 +61,29 @@ app.get('/links', checkUser,
     });
   });
 
+app.get('/signup',
+  function(req, res) {
+    res.render('signup');
+  });
+
 app.post('/login',
   function(req, res) {
     //console.log('req body ******* ', req.body);
     var username = req.body.username;
     var password = req.body.password;
 
-    if (username === 'Phillip' && password === 'Phillip') {
-      req.session.regenerate(function() {
-        req.session.user = username;
-        res.redirect('/');
-      });
-    } else {
-      res.redirect('/login');
+    new User({username: username, password: password}).fetch().then(function(found) {
+      if (found) {
+        req.session.regenerate(function() {
+          req.session.user = username;
+          res.redirect('/');
+        });
+      } else {
+        console.log('invalid username or password');
+        res.redirect('/login');
+      }
     }
+    );
   });
 
 app.post('/links',
@@ -112,6 +121,25 @@ app.post('/links',
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.post('/signup',
+  function(req, res) {
+    var username = req.body.username;
+    var password = req.body.password;
+
+    new User({ username: username, password: password }).save()
+      .then(function(model) {
+        console.log('Created User: ', model.get('username'));
+
+        Users.create({
+          username: username,
+          password: password
+        })
+          .then(function(user) {
+            console.log('inside then', user);
+            res.redirect('/login');
+          });
+      });
+  });
 
 
 
