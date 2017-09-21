@@ -143,8 +143,23 @@ app.post('/signup',
       });
   });
 
+app.get('/logout',
+  function(req, res) {
+    req.session.destroy(function(err) {
+      if (err) {
+        throw (err);
+      }
+
+      console.log('logout callback invoked');
+    });
+    res.redirect('/login');
+  });
 
 
+// req.session.destroy(function (err) {
+//   if (err) return next(err)
+//   res.redirect('/blah')
+// })
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail

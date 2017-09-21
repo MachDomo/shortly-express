@@ -3,7 +3,8 @@ window.Shortly = Backbone.View.extend({
 
   events: {
     'click li a.index': 'renderIndexView',
-    'click li a.create': 'renderCreateView'
+    'click li a.create': 'renderCreateView',
+    'click li a.logout': 'logout'
   },
 
   initialize: function() {
@@ -14,6 +15,14 @@ window.Shortly = Backbone.View.extend({
     this.router.on('route', this.updateNav, this);
 
     Backbone.history.start({ pushState: true });
+  },
+
+  logout: function(e) {
+    console.log('button works');
+    // e && e.preventDefault();
+    this.router.navigate('/logout', { trigger: true });
+    location.reload();
+
   },
 
   render: function() {
