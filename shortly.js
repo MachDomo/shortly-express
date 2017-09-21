@@ -135,8 +135,10 @@ app.post('/signup',
           password: password
         })
           .then(function(user) {
-            console.log('inside then', user);
-            res.redirect('/login');
+            req.session.regenerate(function() {
+              req.session.user = username;
+              res.redirect('/');
+            });
           });
       });
   });
