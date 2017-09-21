@@ -53,10 +53,10 @@ describe('', function() {
       .del()
       .catch(function(error) {
         // uncomment when writing authentication tests
-        // throw {
-        //   type: 'DatabaseError',
-        //   message: 'Failed to create test setup data'
-        // };
+        throw {
+          type: 'DatabaseError',
+          message: 'Failed to create test setup data'
+        };
       });
 
     // delete user Phillip from db so it can be created later for the test
@@ -65,38 +65,42 @@ describe('', function() {
       .del()
       .catch(function(error) {
         // uncomment when writing authentication tests
-        // throw {
-        //   type: 'DatabaseError',
-        //   message: 'Failed to create test setup data'
-        // };
+        throw {
+          type: 'DatabaseError',
+          message: 'Failed to create test setup data'
+        };
       });
   });
 
   describe('Link creation:', function() {
 
-    var requestWithSession = request.defaults({jar: true});
+    var requestWithSession = request.defaults({ jar: true });
 
     //create user login
-    xbeforeEach(function(done) {
+    beforeEach(function(done) {
       // create a user that we can then log-in with
+      console.log('new User not created');
       new User({
         'username': 'Phillip',
         'password': 'Phillip'
-      }).save().then(function() {
-        var options = {
-          'method': 'POST',
-          'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/login',
-          'json': {
-            'username': 'Phillip',
-            'password': 'Phillip'
-          }
-        };
-        // login via form and save session info
-        requestWithSession(options, function(error, res, body) {
-          done();
+      }).save()
+        .then(function() {
+          console.log('User created');
+          console.log(model.get('username'));
+          var options = {
+            'method': 'POST',
+            'followAllRedirects': true,
+            'uri': 'http://127.0.0.1:4568/login',
+            'json': {
+              'username': 'Phillip',
+              'password': 'Phillip'
+            }
+          };
+          // login via form and save session info
+          requestWithSession(options, function(error, res, body) {
+            done();
+          });
         });
-      });
     });
 
     it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
@@ -148,7 +152,7 @@ describe('', function() {
         });
       });
 
-      it('Fetches the link url title', function (done) {
+      it('Fetches the link url title', function(done) {
         requestWithSession(options, function(error, res, body) {
           db.knex('urls')
             .where('title', '=', 'Funny pictures of animals, funny dog pictures')
@@ -302,7 +306,7 @@ describe('', function() {
 
   describe('Account Login:', function() {
 
-    var requestWithSession = request.defaults({jar: true});
+    var requestWithSession = request.defaults({ jar: true });
 
     beforeEach(function(done) {
       new User({

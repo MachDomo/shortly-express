@@ -63,10 +63,11 @@ app.get('/links', checkUser,
 
 app.post('/login',
   function(req, res) {
+    //console.log('req body ******* ', req.body);
     var username = req.body.username;
     var password = req.body.password;
 
-    if (username === 'demo' && password === 'demo') {
+    if (username === 'Phillip' && password === 'Phillip') {
       req.session.regenerate(function() {
         req.session.user = username;
         res.redirect('/');
