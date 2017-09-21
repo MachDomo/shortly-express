@@ -1,5 +1,6 @@
 var expect = require('chai').expect;
 var request = require('request');
+var bcrypt = require('bcrypt-nodejs');
 
 var app = require('../shortly.js');
 var db = require('../app/config');
@@ -80,27 +81,42 @@ describe('', function() {
     beforeEach(function(done) {
       // create a user that we can then log-in with
       console.log('new User not created');
-      new User({
-        'username': 'Phillip',
-        'password': 'Phillip'
-      }).save()
-        .then(function(model) {
-          console.log('User created');
-          console.log(model.get('username'));
-          var options = {
-            'method': 'POST',
-            'followAllRedirects': true,
-            'uri': 'http://127.0.0.1:4568/login',
-            'json': {
-              'username': 'Phillip',
-              'password': 'Phillip'
-            }
-          };
-          // login via form and save session info
-          requestWithSession(options, function(error, res, body) {
-            done();
-          });
+
+
+      bcrypt.genSalt(4, function(err, salt) {
+        console.log('salt generated', salt);
+        bcrypt.hash('Phillip', salt, null, function(err, hash) {
+          if (err) {
+            throw err;
+          }
+
+          let password = hash;
+          console.log(password);
+
+          new User({
+            'username': 'Phillip',
+            'password': password
+          }).save()
+            .then(function(model) {
+              console.log('User created');
+              console.log(model.get('username'));
+              var options = {
+                'method': 'POST',
+                'followAllRedirects': true,
+                'uri': 'http://127.0.0.1:4568/login',
+                'json': {
+                  'username': 'Phillip',
+                  'password': 'Phillip'
+                }
+              };
+              // login via form and save session info
+              requestWithSession(options, function(error, res, body) {
+                done();
+              });
+            });
         });
+      });
+
     });
 
     it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
@@ -309,12 +325,30 @@ describe('', function() {
     var requestWithSession = request.defaults({ jar: true });
 
     beforeEach(function(done) {
-      new User({
-        'username': 'Phillip',
-        'password': 'Phillip'
-      }).save().then(function() {
-        done();
+
+
+      bcrypt.genSalt(4, function(err, salt) {
+        console.log('salt generated', salt);
+        bcrypt.hash('Phillip', salt, null, function(err, hash) {
+          if (err) {
+            throw err;
+          }
+
+          let password = hash;
+          console.log(password);
+
+          new User({
+            'username': 'Phillip',
+            'password': password
+          }).save().then(function() {
+            done();
+          });
+        });
       });
+
+
+
+
     });
 
     it('Logs in existing users', function(done) {

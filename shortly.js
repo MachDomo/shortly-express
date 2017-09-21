@@ -25,7 +25,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 //added cookie parser and session
 // app.use(express.cookieParser());
-app.use(session({ secret: 'shaken not stirred' }));
+app.use(session({
+  secret: 'shaken not stirred',
+  resave: false,
+  saveUninitialized: true
+}));
 
 
 
@@ -75,7 +79,7 @@ app.post('/login',
 
     console.log(password);
 
-    User.where({ username: username}).fetch().then(function(model) {
+    new User({ username: username }).fetch().then(function(model) {
       if (model) {
         console.log(model);
         console.log('Password: ', model.get('password'));
