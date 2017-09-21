@@ -3,6 +3,7 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 
 
 var db = require('./app/config');
@@ -72,18 +73,46 @@ app.post('/login',
     var username = req.body.username;
     var password = req.body.password;
 
-    new User({username: username, password: password}).fetch().then(function(found) {
-      if (found) {
-        req.session.regenerate(function() {
-          req.session.user = username;
-          res.redirect('/');
+    console.log(password);
+
+    User.where({ username: username}).fetch().then(function(model) {
+      if (model) {
+        console.log(model);
+        console.log('Password: ', model.get('password'));
+
+        bcrypt.compare(password, model.get('password'), function(err, correctPass) {
+          if (err) {
+            console.log('wrong password');
+          }
+
+          if (correctPass) {
+            req.session.regenerate(function() {
+              req.session.user = username;
+              res.redirect('/');
+            });
+          } else {
+            console.log('invalid password');
+            res.redirect('/login');
+          }
         });
+
+
+        // .then(function(err, res) {
+        //   if (res) {
+        //     req.session.regenerate(function() {
+        //       req.session.user = username;
+        //       res.redirect('/');
+        //     });
+        //   } else {
+        //     console.log('invalid password');
+        //     res.redirect('/login');
+        //   }
+        // });
       } else {
         console.log('invalid username or password');
         res.redirect('/login');
       }
-    }
-    );
+    });
   });
 
 app.post('/links',
@@ -126,21 +155,35 @@ app.post('/signup',
     var username = req.body.username;
     var password = req.body.password;
 
-    new User({ username: username, password: password }).save()
-      .then(function(model) {
-        console.log('Created User: ', model.get('username'));
+    bcrypt.genSalt(4, function(err, salt) {
+      console.log('salt generated', salt);
+      bcrypt.hash(password, salt, null, function(err, hash) {
+        if (err) {
+          throw err;
+        }
 
-        Users.create({
-          username: username,
-          password: password
-        })
-          .then(function(user) {
-            req.session.regenerate(function() {
-              req.session.user = username;
-              res.redirect('/');
-            });
+        password = hash;
+
+        new User({ username: username, password: password }).save()
+          .then(function(model) {
+            console.log('Created User: ', model.get('username'));
+            console.log('Password post signup: ', model.get('password'));
+
+            Users.create({
+              username: model.get('username'),
+              password: model.get('password')
+            })
+              .then(function(user) {
+                req.session.regenerate(function() {
+                  req.session.user = username;
+                  res.redirect('/');
+                });
+              });
           });
       });
+    });
+
+
   });
 
 app.get('/logout',
