@@ -1,7 +1,7 @@
 node_modules
 db/*.sqlite
 *.DS_Store
-
+*.ejs
 # Floobits
 .floo
 .floobit
