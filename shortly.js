@@ -189,39 +189,6 @@ app.post('/signup',
   });
 
 
-// app.post('/signup', function(req, res) {
-//   var username = req.body.username;
-//   var password = req.body.password;
-
-//   new User({ username: username })
-//     .fetch()
-//     .then(function(user) {
-//       if (!user) {
-//         // BASIC VERSION
-//         // bcrypt.hash(password, null, null, function(err, hash) {
-//         //   Users.create({
-//         //     username: username,
-//         //     password: hash
-//         //   }).then(function(user) {
-//         //       util.createSession(req, res, user);
-//         //   });
-//         // });
-//         // ADVANCED VERSION -- see user model
-//         var newUser = new User({
-//           username: username,
-//           password: password
-//         });
-//         newUser.save()
-//           .then(function(newUser) {
-//             util.createSession(req, res, newUser);
-//           });
-//       } else {
-//         console.log('Account already exists');
-//         res.redirect('/signup');
-//       }
-//     });
-// });
-
 
 
 
