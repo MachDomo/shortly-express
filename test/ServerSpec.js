@@ -83,40 +83,31 @@ describe('', function() {
       console.log('new User not created');
 
 
-      bcrypt.genSalt(4, function(err, salt) {
-        console.log('salt generated', salt);
-        bcrypt.hash('Phillip', salt, null, function(err, hash) {
-          if (err) {
-            throw err;
-          }
+      // bcrypt.genSalt(4, function(err, salt) {
+      //   console.log('salt generated', salt);
+      //   bcrypt.hash('Phillip', salt, null, function(err, hash) {
+      //     if (err) {
+      //       throw err;
+      //     }
 
-          let password = hash;
-          console.log(password);
+      //     let password = hash;
+      //     console.log(password);
 
-          new User({
-            'username': 'Phillip',
-            'password': password
-          }).save()
-            .then(function(model) {
-              console.log('User created');
-              console.log(model.get('username'));
-              var options = {
-                'method': 'POST',
-                'followAllRedirects': true,
-                'uri': 'http://127.0.0.1:4568/login',
-                'json': {
-                  'username': 'Phillip',
-                  'password': 'Phillip'
-                }
-              };
-              // login via form and save session info
-              requestWithSession(options, function(error, res, body) {
-                done();
-              });
-            });
-        });
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
+
+      requestWithSession(options, function(error, res, body) {
+        if (error) {
+          console.log(error);
+        }
+        done();
       });
-
     });
 
     it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
@@ -318,6 +309,34 @@ describe('', function() {
       });
     });
 
+    it('Should not make a user if user already exists', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
+
+      request(options, function(error, res, body) {
+        db.knex('users')
+          .where('username', '=', 'Phillip')
+          .then(function(res) {
+            console.log('RES PHILLIP', res);
+            expect(res.length).to.equal(1);
+            console.log('test******');
+            done();
+          }).catch(function(err) {
+            throw {
+              type: 'DatabaseError',
+              message: 'Failed to create test setup data'
+            };
+          });
+
+      });
+    });
+
   }); // 'Account Creation'
 
   describe('Account Login:', function() {
@@ -326,25 +345,23 @@ describe('', function() {
 
     beforeEach(function(done) {
 
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
 
-      bcrypt.genSalt(4, function(err, salt) {
-        console.log('salt generated', salt);
-        bcrypt.hash('Phillip', salt, null, function(err, hash) {
-          if (err) {
-            throw err;
-          }
-
-          let password = hash;
-          console.log(password);
-
-          new User({
-            'username': 'Phillip',
-            'password': password
-          }).save().then(function() {
-            done();
-          });
-        });
+      requestWithSession(options, function(error, res, body) {
+        if (error) {
+          console.log(error);
+        }
+        done();
       });
+
+
 
 
 
@@ -383,6 +400,86 @@ describe('', function() {
       });
     });
 
-  }); // 'Account Login'
+  }); // 'Account   Login'
 
+  describe('Account Logout:', function() {
+
+    var requestWithSession = request.defaults({ jar: true });
+
+    beforeEach(function(done) {
+
+
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
+
+      requestWithSession(options, function(error, res, body) {
+        if (error) {
+          console.log(error);
+        }
+        done();
+      });
+
+
+
+
+    });
+
+    it('Logs in existing users', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/login',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
+
+      requestWithSession(options, function(error, res, body) {
+        expect(res.headers.location).to.equal('/');
+        done();
+      });
+    });
+
+    it('Logs out existing users', function(done) {
+      var options = {
+        'method': 'GET',
+        'uri': 'http://127.0.0.1:4568/logout',
+      };
+
+      requestWithSession(options, function(error, res, body) {
+
+        // expect(res.headers.location).to.equal('/login');
+        done();
+      });
+
+      it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
+        request('http://127.0.0.1:4568/', function(error, res, body) {
+          expect(res.req.path).to.equal('/login');
+          done();
+        });
+      });
+
+      it('Redirects to login page if a user tries to create a link and is not signed in', function(done) {
+        request('http://127.0.0.1:4568/create', function(error, res, body) {
+          expect(res.req.path).to.equal('/login');
+          done();
+        });
+      });
+
+      it('Redirects to login page if a user tries to see all of the links and is not signed in', function(done) {
+        request('http://127.0.0.1:4568/links', function(error, res, body) {
+          expect(res.req.path).to.equal('/login');
+          done();
+        });
+      });
+    });
+
+
+  }); // Account Logout
 });

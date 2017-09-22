@@ -9,11 +9,9 @@ var User = db.Model.extend({
   hasTimestamps: true,
 
   initialize: function() {
-    this.on('creating', function(model, attrs, options) {
-      console.log('user: ', model.get('username'));
-      console.log('password: ', model.get('password'));
+    // this.on('creating', function(model, attrs, options) {
 
-    });
+    // });
   },
 });
 

@@ -77,12 +77,10 @@ app.post('/login',
     var username = req.body.username;
     var password = req.body.password;
 
-    console.log(password);
 
     new User({ username: username }).fetch().then(function(model) {
       if (model) {
-        console.log(model);
-        console.log('Password: ', model.get('password'));
+
 
         bcrypt.compare(password, model.get('password'), function(err, correctPass) {
           if (err) {
@@ -160,7 +158,6 @@ app.post('/signup',
     var password = req.body.password;
 
     bcrypt.genSalt(4, function(err, salt) {
-      console.log('salt generated', salt);
       bcrypt.hash(password, salt, null, function(err, hash) {
         if (err) {
           throw err;
@@ -168,27 +165,66 @@ app.post('/signup',
 
         password = hash;
 
-        new User({ username: username, password: password }).save()
-          .then(function(model) {
-            console.log('Created User: ', model.get('username'));
-            console.log('Password post signup: ', model.get('password'));
 
-            Users.create({
-              username: model.get('username'),
-              password: model.get('password')
-            })
-              .then(function(user) {
-                req.session.regenerate(function() {
-                  req.session.user = username;
-                  res.redirect('/');
+        new User({ username: username })
+          .fetch()
+          .then(function(user) {
+            if (!user) {
+              new User({ username: username, password: password }).save()
+                .then(function(user) {
+                  req.session.regenerate(function() {
+                    req.session.user = username;
+                    res.redirect('/');
+                  });
+
                 });
-              });
+            } else {
+              console.log('Account already exists');
+              console.log(user);
+              res.redirect('/signup');
+            }
           });
       });
     });
-
-
   });
+
+
+// app.post('/signup', function(req, res) {
+//   var username = req.body.username;
+//   var password = req.body.password;
+
+//   new User({ username: username })
+//     .fetch()
+//     .then(function(user) {
+//       if (!user) {
+//         // BASIC VERSION
+//         // bcrypt.hash(password, null, null, function(err, hash) {
+//         //   Users.create({
+//         //     username: username,
+//         //     password: hash
+//         //   }).then(function(user) {
+//         //       util.createSession(req, res, user);
+//         //   });
+//         // });
+//         // ADVANCED VERSION -- see user model
+//         var newUser = new User({
+//           username: username,
+//           password: password
+//         });
+//         newUser.save()
+//           .then(function(newUser) {
+//             util.createSession(req, res, newUser);
+//           });
+//       } else {
+//         console.log('Account already exists');
+//         res.redirect('/signup');
+//       }
+//     });
+// });
+
+
+
+
 
 app.get('/logout',
   function(req, res) {
@@ -197,7 +233,6 @@ app.get('/logout',
         throw (err);
       }
 
-      console.log('logout callback invoked');
     });
     res.redirect('/login');
   });
