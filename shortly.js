@@ -4,7 +4,8 @@ var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 var bcrypt = require('bcrypt-nodejs');
-
+var passport = require('passport');
+var GithubStrategy = require('passport-github2').Strategy;
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -12,6 +13,32 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+passport.use(new GithubStrategy( {
+  clientID: '2d429175dc4074cb26fa',
+  clientSecret: '4a8afc896f312ffb67a9a7fc13eaf4b8a947f1e6',
+  callbackURL: 'http://localhost:4568/auth/callback'
+}, function(accessToken, refreshToken, profile, done) {
+
+  process.nextTick(function () {
+    done(null, {
+      accessToken: accessToken,
+      profile: profile
+    });
+  });
+}));
+
+
+// ===================================================================
 
 var app = express();
 
@@ -22,7 +49,6 @@ app.use(partials());
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(__dirname + '/public'));
 //added cookie parser and session
 // app.use(express.cookieParser());
 app.use(session({
@@ -30,9 +56,21 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.static(__dirname + '/public'));
 
-
-
+// ===================================================================
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  } else if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access Denied';
+    res.redirect('/login');
+  }
+}
 
 let checkUser = (req, res, next) => {
   if (req.session.user) {
@@ -43,10 +81,10 @@ let checkUser = (req, res, next) => {
   }
 };
 
+// ===================================================================
 
 
-
-app.get('/', checkUser, function(req, res) {
+app.get('/', ensureAuthenticated, function(req, res) {
   res.render('index');
 });
 
@@ -54,12 +92,12 @@ app.get('/login', function(req, res) {
   res.render('login');
 });
 
-app.get('/create', checkUser,
+app.get('/create', ensureAuthenticated,
   function(req, res) {
     res.render('index');
   });
 
-app.get('/links', checkUser,
+app.get('/links', ensureAuthenticated,
   function(req, res) {
     Links.reset().fetch().then(function(links) {
       res.status(200).send(links.models);
@@ -188,13 +226,18 @@ app.post('/signup',
     });
   });
 
+app.get('/auth/github',
+  passport.authenticate('github', { scope: [ 'user:email'] }),
+  function(req, res) {
 
+  });
 
 
 
 
 app.get('/logout',
   function(req, res) {
+    req.logout();
     req.session.destroy(function(err) {
       if (err) {
         throw (err);
@@ -204,6 +247,12 @@ app.get('/logout',
     res.redirect('/login');
   });
 
+app.get('/auth/callback',
+  passport.authenticate('github', {failureRedirect: '/login'}),
+  function(req, res) {
+
+    res.redirect('/');
+  });
 
 // req.session.destroy(function (err) {
 //   if (err) return next(err)
